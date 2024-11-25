@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:parkvision/login.dart';
 import 'package:parkvision/navbar.dart';
@@ -277,8 +278,53 @@ class MobileLayout extends StatelessWidget {
   }
 }
 
-class StatusSlot extends StatelessWidget {
+class StatusSlot extends StatefulWidget {
   const StatusSlot({super.key});
+
+  @override
+  State<StatusSlot> createState() => _StatusSlotState();
+}
+
+class _StatusSlotState extends State<StatusSlot> {
+  int emptySlots = 0;
+  int occupiedSlots = 0;
+  int violationSlots = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStatus();
+    // Set up periodic updates every 2 seconds
+    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      _fetchStatus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://192.168.69.200:8080/status'),  // Replace with your backend IP
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          emptySlots = data['empty_slots'];
+          occupiedSlots = data['occupied_slots'];
+          violationSlots = data['violation_slots'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching status: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -342,15 +388,15 @@ class StatusSlot extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),
-                    child: _buildSlotCounter(Colors.black, Colors.green, '20'),
+                    child: _buildSlotCounter(Colors.black, Colors.green, emptySlots.toString()),
                   ),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),
-                    child: _buildSlotCounter(Colors.black, Colors.red, '0'),
+                    child: _buildSlotCounter(Colors.black, Colors.red, violationSlots.toString()),
                   ),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16.0),
-                    child: _buildSlotCounter(Colors.black, Colors.blue, '4'),
+                    child: _buildSlotCounter(Colors.black, Colors.blue, occupiedSlots.toString()),
                   ),
                 ],
               ),
