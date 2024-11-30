@@ -14,9 +14,9 @@
     <uses-feature android:name="android.hardware.camera.autofocus" />
 
     <application
-        android:label="parkvision"
+        android:label="Park Vision"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/icon_parkvision">
         
         <activity
             android:name=".MainActivity"

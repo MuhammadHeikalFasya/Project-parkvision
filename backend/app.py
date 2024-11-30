@@ -157,10 +157,10 @@ def generate_frames():
                 empty_slots += 1
 
 
-        # Tambahkan teks untuk slot kosong, terisi, dan pelanggaran
-        cv2.putText(frame, f'Slot Kosong: {empty_slots}', (10, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        cv2.putText(frame, f'Slot Terisi: {occupied_slots}', (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-        cv2.putText(frame, f'Slot Melanggar: {violation_slots}', (10, 480), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        # # Tambahkan teks untuk slot kosong, terisi, dan pelanggaran
+        # cv2.putText(frame, f'Slot Kosong: {empty_slots}', (10, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        # cv2.putText(frame, f'Slot Terisi: {occupied_slots}', (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+        # cv2.putText(frame, f'Slot Melanggar: {violation_slots}', (10, 480), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
 
         for area_index, (area_name, area_coords) in enumerate(areas.items(), start=1):
