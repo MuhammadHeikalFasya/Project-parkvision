@@ -4,26 +4,23 @@ import numpy as np
 import os
 from datetime import datetime, timedelta
 from ultralytics import YOLO
-from flask import Flask, Response
+from flask import Flask, Response, jsonify, send_from_directory
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-# Memuat model YOLOv8
 model = YOLO('yolov8s.pt')
 
-# Inisialisasi pengambilan video dari file
 cap = cv2.VideoCapture('Dataset parkir v2.mp4')
 
-# Global variables for slot status
 empty_slots = 0
 occupied_slots = 0
 violation_slots = 0
 
-# Memuat daftar kelas dari dataset COCO
 with open("coco.txt", "r") as my_file:
     class_list = my_file.read().split("\n")
 
-# Mendefinisikan area parkir dengan koordinat masing-masing
 areas = {
     "area1": [(210, 173), (19, 340), (149, 319), (315, 169)],
     "area2": [(330, 168), (172, 310), (313, 284), (450, 150)],
@@ -36,7 +33,8 @@ areas = {
 
 previous_detections = {}
 violation_timers = {}
-capture_directory = "captures"
+
+capture_directory = os.path.join("images", "captures")
 os.makedirs(capture_directory, exist_ok=True)
 
 def get_line_positions(area_coords, line_spacing=0.35):
@@ -135,7 +133,7 @@ def generate_frames():
                 if index not in violation_timers:
                     violation_timers[index] = datetime.now()
                 elif datetime.now() - violation_timers[index] >= timedelta(seconds=3):
-                    filename = f"backend/{capture_directory}/pelanggaran_{index}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                    filename = os.path.join(capture_directory, f"pelanggaran_{index}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg")
                     cv2.imwrite(filename, frame[y1:y2, x1:x2])
                     print(f"Gambar pelanggaran disimpan: {filename}")
             else:
@@ -143,7 +141,6 @@ def generate_frames():
 
         previous_detections = current_detections
 
-        # Tambahkan ini di bagian perhitungan di generate_frames()
         empty_slots = 0
         occupied_slots = 0
         violation_slots = 0
@@ -156,13 +153,6 @@ def generate_frames():
             else:
                 empty_slots += 1
 
-
-        # # Tambahkan teks untuk slot kosong, terisi, dan pelanggaran
-        # cv2.putText(frame, f'Slot Kosong: {empty_slots}', (10, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        # cv2.putText(frame, f'Slot Terisi: {occupied_slots}', (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-        # cv2.putText(frame, f'Slot Melanggar: {violation_slots}', (10, 480), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-
-
         for area_index, (area_name, area_coords) in enumerate(areas.items(), start=1):
             color = (0, 0, 255) if violations[area_name] > 0 else (255, 0, 0) if area_counts[area_name] > 0 else (0, 255, 0)
             cv2.polylines(frame, [np.array(area_coords, np.int32)], True, color, 2)
@@ -170,20 +160,6 @@ def generate_frames():
             circle_center = (int(np.mean([coord[0] for coord in area_coords])), int(np.mean([coord[1] for coord in area_coords])) - 10)
             cv2.circle(frame, circle_center, 15, (255, 255, 255), -1)
             cv2.putText(frame, str(area_index), circle_center, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
-
-
-        for area_index, (area_name, area_coords) in enumerate(areas.items(), start=1):
-            color = (0, 0, 255) if violations[area_name] > 0 else (255, 0, 0) if area_counts[area_name] > 0 else (0, 255, 0)
-            cv2.polylines(frame, [np.array(area_coords, np.int32)], True, color, 2)
-            draw_vertical_lines(frame, area_coords)
-            circle_center = (int(np.mean([coord[0] for coord in area_coords])), int(np.mean([coord[1] for coord in area_coords])) - 10)
-            cv2.circle(frame, circle_center, 15, (255, 255, 255), -1)
-            cv2.putText(frame, str(area_index), circle_center, cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
-
-        # total_violations = sum(violations.values())
-        # cv2.putText(frame, f'Total Pelanggaran: {total_violations}', (10, 480), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-        # violation_details = ', '.join([f'{area_name} ({violations[area_name]})' for area_name in areas if violations[area_name] > 0])
-        # cv2.putText(frame, f'Pelanggaran: {violation_details}', (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
 
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
@@ -200,10 +176,56 @@ def status():
         "violation_slots": violation_slots
     }
 
-
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
+
+@app.route('/violations')
+def get_violations():
+    violations = []
+    captures_dir = os.path.join("images", "captures")
+    
+    for filename in os.listdir(captures_dir):
+        if filename.startswith('pelanggaran_'):
+            parts = filename.replace('.jpg', '').split('_')
+            violation_id = parts[1]
+            timestamp = datetime.strptime('_'.join(parts[2:]), '%Y%m%d_%H%M%S')
+            
+            violations.append({
+                'image': filename,
+                'date': timestamp.strftime('%d %B %Y'),
+                'description': 'Kendaraan parkir di luar Area.',
+                'location': f'Area {violation_id}',
+            })
+    
+    violations.sort(key=lambda x: datetime.strptime(x['date'], '%d %B %Y'), reverse=True)
+    return jsonify(violations)
+
+@app.route('/violations/<string:filename>', methods=['DELETE'])
+def delete_violation(filename):
+    file_path = os.path.join(capture_directory, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return jsonify({"message": "Violation deleted successfully"}), 200
+    else:
+        return jsonify({"message": "Violation not found"}), 404
+
+@app.route('/violations', methods=['DELETE'])
+def delete_all_violations():
+    try:
+        for filename in os.listdir(capture_directory):
+            if filename.startswith('pelanggaran_'):
+                file_path = os.path.join(capture_directory, filename)
+                os.remove(file_path)
+        return jsonify({"message": "All violations deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+    
+@app.route('/images/captures/<path:filename>')
+def serve_image(filename):
+    return send_from_directory(os.path.join('images', 'captures'), filename)
+
 if __name__ == '__main__':
-    app.run(host= '0.0.0.0', debug=True, port=8080)
+    app.run(host='0.0.0.0', debug=True, port=8080)

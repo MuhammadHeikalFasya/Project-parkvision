@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Import library intl
 import 'package:parkvision/db__helper.dart';
 
 class AnnouncementPage extends StatefulWidget {
@@ -24,6 +25,11 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     });
   }
 
+  String _formatDate(String rawDate) {
+    final dateTime = DateTime.parse(rawDate);
+    return DateFormat('dd MMMM yyyy').format(dateTime); // Format seperti "30 November 2024"
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,20 +46,8 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
       ),
       body: Container(
         color: const Color.fromARGB(255, 236, 233, 233),
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: [
-            const Text(
-              'Pengumuman Terbaru',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (announcements.isEmpty)
-              const Center(
+        child: announcements.isEmpty
+            ? const Center(
                 child: Text(
                   'Belum ada pengumuman',
                   style: TextStyle(
@@ -62,40 +56,40 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
                   ),
                 ),
               )
-            else
-              // Replace the announcements.map section in your AnnouncementPage with this:
-
-...announcements.map((announcement) => AnnouncementItem(
-  id: announcement.id,
-  title: announcement.title,
-  date: announcement.date,
-  description: announcement.description,
-  author: announcement.author,
-  icon: Icons.campaign,
-  onDelete: () async {
-    if (announcement.id != null) {
-      try {
-        await DatabaseHelper.instance.deleteAnnouncement(announcement.id!);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pengumuman berhasil dihapus'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _loadAnnouncements(); // Reload the announcements
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal menghapus pengumuman'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  },
-)),
-          ],
-        ),
+            : ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: announcements.map((announcement) {
+                  return AnnouncementItem(
+                    id: announcement.id,
+                    title: announcement.title,
+                    date: _formatDate(announcement.date), // Format tanggal
+                    description: announcement.description,
+                    author: announcement.author,
+                    icon: Icons.campaign,
+                    onDelete: () async {
+                      if (announcement.id != null) {
+                        try {
+                          await DatabaseHelper.instance.deleteAnnouncement(announcement.id!);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Pengumuman berhasil dihapus'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          _loadAnnouncements();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Gagal menghapus pengumuman'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  );
+                }).toList(),
+              ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -103,9 +97,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             context: context,
             isScrollControlled: true,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(25),
-              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
             ),
             builder: (context) => const AddAnnouncementSheet(),
           );
@@ -119,6 +111,7 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
     );
   }
 }
+
 
 class AnnouncementItem extends StatelessWidget {
   final String title;

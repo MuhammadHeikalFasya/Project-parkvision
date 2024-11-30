@@ -1,7 +1,85 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class ViolationPage extends StatelessWidget {
+class ViolationPage extends StatefulWidget {
   const ViolationPage({super.key});
+
+  @override
+  State<ViolationPage> createState() => _ViolationPageState();
+}
+
+class _ViolationPageState extends State<ViolationPage> {
+  List<Map<String, dynamic>> violations = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchViolations();
+  }
+
+  Future<void> fetchViolations() async {
+    try {
+      final response =
+          await http.get(Uri.parse('http://192.168.1.49:8080/violations'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          violations = data.cast<Map<String, dynamic>>();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      print('Error fetching violations: $e');
+    }
+  }
+
+  Future<void> deleteViolation(String imageName) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://192.168.1.49:8080/violations/$imageName'),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          violations
+              .removeWhere((violation) => violation['image'] == imageName);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pelanggaran berhasil dihapus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting violation: $e');
+    }
+  }
+
+  Future<void> deleteAllViolations() async {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://192.168.1.49:8080/violations'),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          violations.clear();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Semua pelanggaran berhasil dihapus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting all violations: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,33 +97,72 @@ class ViolationPage extends StatelessWidget {
       ),
       body: Container(
         color: const Color.fromARGB(255, 236, 233, 233),
-        child: ListView(
-          padding: const EdgeInsets.all(16.0),
-          children: const [
-            Text(
-              'Daftar Pelanggaran Parkir',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  const Text(
+                    'Daftar Pelanggaran Parkir',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Hapus Semua Pelanggaran'),
+                            content: const Text(
+                                'Anda yakin ingin menghapus semua pelanggaran?'),
+                            actions: [
+                              TextButton(
+                                child: const Text('Batal'),
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                              TextButton(
+                                child: const Text(
+                                  'Hapus Semua',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  deleteAllViolations();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 24,
+                      ),
+                    ),
+                    child: const Text(
+                      'Hapus Semua Pelanggaran',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...violations.map((violation) => ViolationItem(
+                        imageUrl:
+                            'http://192.168.1.49:8080/images/captures/${violation['image']}',
+                        date: violation['date'],
+                        description: violation['description'],
+                        location: violation['location'],
+                        onDelete: deleteViolation,
+                      )),
+                ],
               ),
-            ),
-            SizedBox(height: 16),
-            ViolationItem(
-              
-              imageUrl: './assets/images/mobil1.jpg', // Ganti dengan URL gambar yang sesuai
-              date: '26 Oktober 2024',
-              description: 'Kendaraan parkir di tempat terlarang.',
-              location: 'Area Parkir 2',
-            ),
-            ViolationItem(
-              imageUrl: './assets/images/mobil2.jpg', // Ganti dengan URL gambar yang sesuai
-              date: '25 Oktober 2024',
-              description: 'Kendaraan parkir di tempat terlarang.',
-              location: 'Area 7',
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -56,6 +173,7 @@ class ViolationItem extends StatelessWidget {
   final String date;
   final String description;
   final String location;
+  final Function(String) onDelete;
 
   const ViolationItem({
     super.key,
@@ -63,6 +181,7 @@ class ViolationItem extends StatelessWidget {
     required this.date,
     required this.description,
     required this.location,
+    required this.onDelete,
   });
 
   @override
@@ -81,12 +200,11 @@ class ViolationItem extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.warning, size: 30, color: Colors.red), // Ikon peringatan
+                const Icon(Icons.warning, size: 30, color: Colors.red),
                 const SizedBox(width: 10),
-                // Menambahkan teks "Pelanggaran Parkir"
                 const Expanded(
                   child: Text(
-                    "Pelanggaran Parkir", // Judul Pelanggaran
+                    "Pelanggaran Parkir",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -94,23 +212,67 @@ class ViolationItem extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Menampilkan tanggal di sebelah kanan
-                Text(
-                  date,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Hapus Pelanggaran'),
+                          content: const Text(
+                              'Anda yakin ingin menghapus pelanggaran ini?'),
+                          actions: [
+                            TextButton(
+                              child: const Text('Batal'),
+                              onPressed: () => Navigator.of(context).pop(),
+                            ),
+                            TextButton(
+                              child: const Text(
+                                'Hapus',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                onDelete(imageUrl.split('/').last);
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             ),
+            const SizedBox(height: 4),
+            Text(
+              date,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
             const SizedBox(height: 8),
-            // Mengatur ukuran gambar
-            Image.asset(
+            Image.network(
               imageUrl,
-              width: 300, // Atur lebar gambar
-              height: 300, // Atur tinggi gambar
-              fit: BoxFit.cover, // Atur cara menampilkan gambar
+              width: 300,
+              height: 300,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 300,
+                  height: 300,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.error),
+                );
+              },
             ),
             const SizedBox(height: 8),
             Text(
