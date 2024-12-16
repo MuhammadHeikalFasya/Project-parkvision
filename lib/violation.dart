@@ -22,7 +22,7 @@ class _ViolationPageState extends State<ViolationPage> {
   Future<void> fetchViolations() async {
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.1.49:8080/violations'));
+          await http.get(Uri.parse('http://192.168.196.46:8080/violations'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
@@ -41,7 +41,7 @@ class _ViolationPageState extends State<ViolationPage> {
   Future<void> deleteViolation(String imageName) async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.49:8080/violations/$imageName'),
+        Uri.parse('http://192.168.196.46:8080/violations/$imageName'),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -63,7 +63,7 @@ class _ViolationPageState extends State<ViolationPage> {
   Future<void> deleteAllViolations() async {
     try {
       final response = await http.delete(
-        Uri.parse('http://192.168.1.49:8080/violations'),
+        Uri.parse('http://192.168.196.46:8080/violations'),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -103,7 +103,7 @@ class _ViolationPageState extends State<ViolationPage> {
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   const Text(
-                    'Daftar Pelanggaran Parkir',
+                    'Daftar Pelanggaran',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -155,7 +155,7 @@ class _ViolationPageState extends State<ViolationPage> {
                   const SizedBox(height: 16),
                   ...violations.map((violation) => ViolationItem(
                         imageUrl:
-                            'http://192.168.1.49:8080/images/captures/${violation['image']}',
+                            'http://192.168.196.46:8080/images/captures/${violation['image']}',
                         date: violation['date'],
                         description: violation['description'],
                         location: violation['location'],

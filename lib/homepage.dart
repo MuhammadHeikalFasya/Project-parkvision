@@ -12,6 +12,7 @@ class ParkVisionApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+            debugShowCheckedModeBanner: false,
       title: 'ParkVision',
       theme: ThemeData(
         primaryColor: Colors.grey[800],
@@ -214,7 +215,7 @@ class VideoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MjpegVideoWidget(
-      streamUrl: 'http://192.168.1.49:8080/video_feed',  // Replace with your backend IP
+      streamUrl: 'http://192.168.196.46:8080/video_feed',  // Replace with your backend IP
     );
   }
 }
@@ -310,7 +311,7 @@ class _StatusSlotState extends State<StatusSlot> {
   Future<void> _fetchStatus() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.49:8080/status'),  // Replace with your backend IP
+        Uri.parse('http://192.168.196.46:8080/status'),  // Replace with your backend IP
       );
       
       if (response.statusCode == 200) {
