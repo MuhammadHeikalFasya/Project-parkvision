@@ -12,7 +12,7 @@ CORS(app)
 
 model = YOLO('yolov8s.pt')
 
-cap = cv2.VideoCapture('Dataset parkir v2.mp4')
+cap = cv2.VideoCapture('assets/videos/dataset_v2.mp4')
 
 empty_slots = 0
 occupied_slots = 0
