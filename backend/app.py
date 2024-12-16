@@ -12,7 +12,7 @@ CORS(app)
 
 model = YOLO('yolov8s.pt')
 
-cap = cv2.VideoCapture('assets/videos/dataset_v2.mp4')
+cap = cv2.VideoCapture('dataset_v2.mp4')
 
 empty_slots = 0
 occupied_slots = 0
@@ -22,13 +22,13 @@ with open("coco.txt", "r") as my_file:
     class_list = my_file.read().split("\n")
 
 areas = {
-    "area1": [(210, 173), (19, 340), (149, 319), (315, 169)],
-    "area2": [(330, 168), (172, 310), (313, 284), (450, 150)],
-    "area3": [(467, 151), (333, 285), (473, 265), (578, 142)],
-    "area4": [(595, 138), (492, 263), (624, 247), (693, 136)],
-    "area5": [(706, 134), (640, 246), (752, 230), (787, 136)],
-    "area6": [(798, 138), (766, 230), (856, 219), (871, 136)],
-    "area7": [(881, 132), (868, 218), (938, 212), (953, 136)],
+    "area1": [(166, 186), (0, 349), (139, 325), (292, 161)],
+    "area2": [(292, 161), (139, 325), (301, 288), (429, 142)],
+    "area3": [(429, 142), (301, 288), (462, 257), (562, 122)],
+    "area4": [(562, 122), (462, 257), (609, 233), (673, 111)],
+    "area5": [(673, 111), (609, 233), (734, 214), (767, 106)],
+    "area6": [(767, 106), (734, 214), (832, 198), (845, 101)],
+    "area7": [(845, 101), (832, 198), (914, 185), (911, 102)],
 }
 
 previous_detections = {}
@@ -61,7 +61,7 @@ def is_between_lines(point, area_coords, line_positions):
     right_line_x = line_positions[1][0] + ratio * (line_positions[1][1] - line_positions[1][0])
     return left_line_x <= cx <= right_line_x
 
-def draw_vertical_lines(frame, area_coords, line_spacing=0.35):
+def draw_vertical_lines(frame, area_coords, line_spacing=0.3):
     coords = np.array(area_coords, np.float32)
     top_y = (coords[0][1] + coords[3][1]) / 2
     bottom_y = (coords[1][1] + coords[2][1]) / 2
@@ -97,7 +97,7 @@ def generate_frames():
             class_id = int(row[5])
             class_name = class_list[class_id]
 
-            if class_name in ["suitcase", "person", "car"]:
+            if class_name in ["car"]:
                 cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
                 is_inside_area = False
                 is_violation = True
@@ -228,4 +228,4 @@ def serve_image(filename):
     return send_from_directory(os.path.join('images', 'captures'), filename)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=8080)
+    app.run(host='0.0.0.0', debug=True, port=5000)

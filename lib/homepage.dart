@@ -215,7 +215,7 @@ class VideoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MjpegVideoWidget(
-      streamUrl: 'http://192.168.196.46:8080/video_feed',  // Replace with your backend IP
+      streamUrl: 'http://10.140.207.4:5000/video_feed',  // Replace with your backend IP
     );
   }
 }

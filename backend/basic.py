@@ -19,7 +19,7 @@ cv2.namedWindow('RGB')
 cv2.setMouseCallback('RGB', RGB)
 
 # Inisialisasi pengambilan video dari file
-cap = cv2.VideoCapture('Dataset parkir v2.mp4')
+cap = cv2.VideoCapture('dataset_v2.mp4')
 
 # Memuat daftar kelas dari dataset COCO
 with open("coco.txt", "r") as my_file:
@@ -27,13 +27,13 @@ with open("coco.txt", "r") as my_file:
 
 # Mendefinisikan area parkir dengan koordinat masing-masing
 areas = {
-    "area1": [(210, 173), (19, 340), (149, 319), (315, 169)],
-    "area2": [(330, 168), (172, 310), (313, 284), (450, 150)],
-    "area3": [(467, 151), (333, 285), (473, 265), (578, 142)],
-    "area4": [(595, 138), (492, 263), (624, 247), (693, 136)],
-    "area5": [(706, 134), (640, 246), (752, 230), (787, 136)],
-    "area6": [(798, 138), (766, 230), (856, 219), (871, 136)],
-    "area7": [(881, 132), (868, 218), (938, 212), (953, 136)],
+    "area1": [(166, 186), (0, 349), (139, 325), (292, 161)],
+    "area2": [(292, 161), (139, 325), (301, 288), (429, 142)],
+    "area3": [(429, 142), (301, 288), (462, 257), (562, 122)],
+    "area4": [(562, 122), (462, 257), (609, 233), (673, 111)],
+    "area5": [(673, 111), (609, 233), (734, 214), (767, 106)],
+    "area6": [(767, 106), (734, 214), (832, 198), (845, 101)],
+    "area7": [(845, 101), (832, 198), (914, 185), (911, 102)],
 }
 
 # Simpan status objek
@@ -79,7 +79,7 @@ def is_between_lines(point, area_coords, line_positions):
     return left_line_x <= cx <= right_line_x
 
 # Fungsi untuk menggambar garis vertikal pada setiap area parkir
-def draw_vertical_lines(frame, area_coords, line_spacing=0.35):
+def draw_vertical_lines(frame, area_coords, line_spacing=0.3):
     coords = np.array(area_coords, np.float32)
     top_y = (coords[0][1] + coords[3][1]) / 2
     bottom_y = (coords[1][1] + coords[2][1]) / 2
@@ -115,7 +115,7 @@ while True:
         class_id = int(row[5])
         class_name = class_list[class_id]
 
-        if class_name in ["suitcase", "person", "car"]:
+        if class_name in ["car"]:
             cx, cy = (x1 + x2) // 2, (y1 + y2) // 2  # Mendapatkan pusat objek
             is_inside_area = False
             is_violation = True  # Default objek dianggap melanggar jika di luar garis
