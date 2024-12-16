@@ -13,7 +13,7 @@ class ParkVisionApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
             debugShowCheckedModeBanner: false,
-      title: 'ParkVision',
+      title: 'Park Vision',
       theme: ThemeData(
         primaryColor: Colors.grey[800],
         fontFamily: 'Arial',
