@@ -71,7 +71,7 @@ flutter:
       - assets/images/teks_parkvision.png
       - assets/images/mobil1.jpg
       - assets/images/mobil2.jpg
-      - assets/videos/dataset_parkir.mp4
+      - assets/videos/dataset_v2.mp4
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
